@@ -14,19 +14,20 @@
 
 
 @class GJJanusRole;
-@class GJJanusListenRole;
+@class GJJanusSubscriberRole;
 @protocol GJJanusRoleDelegate<GJJanusPluginDelegate>
 -(void)GJJanusRole:(GJJanusRole*)role joinRoomWithResult:(NSError*)error;
 -(void)GJJanusRole:(GJJanusRole*)role leaveRoomWithResult:(NSError*)error;
 
--(void)GJJanusRole:(GJJanusRole*)role didJoinRemoteRole:(GJJanusListenRole*)remoteRole;
+-(void)GJJanusRole:(GJJanusRole*)role didJoinRemoteRole:(GJJanusSubscriberRole*)remoteRole;
 -(void)GJJanusRole:(GJJanusRole*)role didLeaveRemoteRoleWithUid:(NSUInteger)uid;
 -(void)GJJanusRole:(GJJanusRole*)role remoteUnPublishedWithUid:(NSUInteger)uid;
 -(void)GJJanusRole:(GJJanusRole*)role remoteDetachWithUid:(NSUInteger)uid;
 @end
 
+// 发布者当前身份
 typedef enum _PublishType{
-    kPublishTypeLister,
+    kPublishTypeSubscriber,
     kPublishTypePublish,
 }PublishType;
 
@@ -45,11 +46,14 @@ typedef void(^RoleJoinRoomCallback)(NSError* error);
 typedef void(^RoleLeaveRoomCallback)(void);
 
 @interface GJJanusRole:GJJanusPlugin <RTCPeerConnectionDelegate>
-@property(nonatomic,assign)NSUInteger ID;
-@property(nonatomic,assign)NSInteger roomID;
-@property(nonatomic,copy)NSNumber* privateID;
-@property(nonatomic,strong)GJJanusMediaConstraints* mediaConstraints;
-@property(nonatomic,weak)id<GJJanusRoleDelegate> delegate;
+@property(nonatomic,copy)   NSString *ID;
+@property(nonatomic,copy)   NSString *roomID;
+@property(nonatomic,copy)   NSString *token;
+@property(nonatomic,copy)   NSString *appID;
+@property(nonatomic,copy)   NSString *privateID;
+@property(nonatomic,strong) GJJanusMediaConstraints* mediaConstraints;
+@property(nonatomic,weak)   id<GJJanusRoleDelegate> delegate;
+
 
 @property(nonatomic,copy)NSString* display;
 @property(nonatomic,assign)PublishType pType;
@@ -64,7 +68,11 @@ typedef void(^RoleLeaveRoomCallback)(void);
 +(instancetype)roleWithDic:(NSDictionary*)dic janus:(GJJanus*)janus delegate:(id<GJJanusRoleDelegate>)delegate;
 //-(instancetype)initWithDelegate:(id<GJJanusRoleDelegate>)delegate;
 
--(void)joinRoomWithRoomID:(NSInteger)roomID userName:(NSString*)userName block:(RoleJoinRoomCallback)block;
+- (void)joinRoomWithRoomID:(NSString *)roomID
+                   display:(NSString *)display
+                     appId:(NSString *)appId
+                     token:(NSString *)token
+                     block:(RoleJoinRoomCallback)block;
 -(void)leaveRoom:(RoleLeaveRoomCallback)leaveBlock;
 
 

@@ -1,0 +1,1 @@
+../../../GJImage/GJImage/GPUImage/Filters/Image processing/GPUImageLocalBinaryPatternFilter.h

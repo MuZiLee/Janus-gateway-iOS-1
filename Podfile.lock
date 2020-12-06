@@ -14,21 +14,84 @@ PODS:
   - AFNetworking/Serialization (3.2.0)
   - AFNetworking/UIKit (3.2.0):
     - AFNetworking/NSURLSession
+  - CocoaAsyncSocket (7.6.4)
+  - CocoaLumberjack (3.6.2):
+    - CocoaLumberjack/Core (= 3.6.2)
+  - CocoaLumberjack/Core (3.6.2)
+  - FMDB (2.7.5):
+    - FMDB/standard (= 2.7.5)
+  - FMDB/standard (2.7.5)
+  - GJImage (0.1.7):
+    - GJImage/GJImage (= 0.1.7)
+    - GJImage/GPUImage (= 0.1.7)
+  - GJImage/GJImage (0.1.7)
+  - GJImage/GPUImage (0.1.7)
+  - GoogleWebRTC (1.1.27828)
+  - MJExtension (3.2.2)
+  - Protobuf (3.13.0)
+  - RealReachability (1.3.0):
+    - RealReachability/Connection (= 1.3.0)
+    - RealReachability/Ping (= 1.3.0)
+  - RealReachability/Connection (1.3.0)
+  - RealReachability/Ping (1.3.0)
   - SocketRocket (0.5.1)
+  - ZipArchive (0.1.1):
+    - ZipArchive/minizip (= 0.1.1)
+  - ZipArchive/minizip (0.1.1)
 
 DEPENDENCIES:
-  - AFNetworking (~> 3.0)
+  - AFNetworking
+  - CocoaAsyncSocket
+  - CocoaLumberjack
+  - FMDB
+  - GJImage (from `https://github.com/MuZiLee/GJImage.git`)
+  - GoogleWebRTC
+  - MJExtension
+  - Protobuf
+  - RealReachability
   - SocketRocket
+  - ZipArchive (from `https://github.com/MuZiLee/ZipArchive.git`)
 
 SPEC REPOS:
-  https://github.com/cocoapods/specs.git:
+  https://github.com/CocoaPods/Specs.git:
     - AFNetworking
     - SocketRocket
+  trunk:
+    - CocoaAsyncSocket
+    - CocoaLumberjack
+    - FMDB
+    - GoogleWebRTC
+    - MJExtension
+    - Protobuf
+    - RealReachability
+
+EXTERNAL SOURCES:
+  GJImage:
+    :git: https://github.com/MuZiLee/GJImage.git
+  ZipArchive:
+    :git: https://github.com/MuZiLee/ZipArchive.git
+
+CHECKOUT OPTIONS:
+  GJImage:
+    :commit: f5a7e9ff71c704be17ce913b5378804823638c1f
+    :git: https://github.com/MuZiLee/GJImage.git
+  ZipArchive:
+    :commit: 25aa32687d8d13a71ce98062207750224ed96f34
+    :git: https://github.com/MuZiLee/ZipArchive.git
 
 SPEC CHECKSUMS:
   AFNetworking: 8ac6017b94ea105479f7776e5288e48ae9c59bb4
+  CocoaAsyncSocket: 694058e7c0ed05a9e217d1b3c7ded962f4180845
+  CocoaLumberjack: bd155f2dd06c0e0b03f876f7a3ee55693122ec94
+  FMDB: 2ce00b547f966261cd18927a3ddb07cb6f3db82a
+  GJImage: dd9fff630c2e6e00e69ac4752feb20260dde10e3
+  GoogleWebRTC: 55e46bee9ac2a4961542e9571bea589b64493f45
+  MJExtension: d9b9c74cbdeb724c1e9ecbb157b318276e62e876
+  Protobuf: 3dac39b34a08151c6d949560efe3f86134a3f748
+  RealReachability: eae9c58d2db52fadd8e1cba4b5d4c028454fbc47
   SocketRocket: d57c7159b83c3c6655745cd15302aa24b6bae531
+  ZipArchive: e6484f54990780a4f1301cd07e981b92f227ca70
 
-PODFILE CHECKSUM: 5d7e507cd626d6f6b955e5ac709c98ea9fbed951
+PODFILE CHECKSUM: a66ef4d143e348e80794cc304a4ad1bbbf29ed30
 
-COCOAPODS: 1.5.3
+COCOAPODS: 1.10.0

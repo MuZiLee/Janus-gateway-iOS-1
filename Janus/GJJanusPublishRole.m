@@ -7,7 +7,7 @@
 //
 
 #import "GJJanusPublishRole.h"
-#import "GJJanusListenRole.h"
+#import "GJJanusSubscriberRole.h"
 #import "GJJanusMediaConstraints+private.h"
 #import "RTCFactory.h"
 //#import "GJLog.h"
@@ -24,7 +24,7 @@ static NSString * const kARDVideoTrackKind = @"video";
 //@dynamic mediaConstraints;
 +(instancetype)roleWithDic:(NSDictionary*)dic janus:(GJJanus*)janus delegate:(id<GJJanusRoleDelegate>)delegate{
     GJJanusPublishRole* publish = [[GJJanusPublishRole alloc]initWithJanus:janus delegate:delegate];
-    publish.ID = [dic[@"id"] integerValue];
+    publish.ID = dic[@"id"];
     publish.display = dic[@"display"];
     publish.audioCode = dic[@"audio_codec"];
     publish.videoCode = dic[@"video_codec"];
@@ -106,14 +106,14 @@ static NSString * const kARDVideoTrackKind = @"video";
     [self.localCamera stopPreview];
 }
 
--(void)joinRoomWithRoomID:(NSInteger)roomID userName:(NSString *)userName block:(RoleJoinRoomCallback)block{
-    NSAssert(roomID > 0 && userName.length > 3,@"参数有误");
+-(void)joinRoomWithRoomID:(NSString *)roomID display:(NSString *)display appId:(NSString *)appId token:(NSString *)token block:(RoleJoinRoomCallback)block{
+//    NSAssert(roomID > 0 && display.length > 3,@"参数有误");
     if (self.attached == NO) {
         WK_SELF;
         [self attachWithCallback:^(NSError *error) {
             if (error == nil) {
                 if (wkSelf) {
-                    [wkSelf joinRoomWithRoomID:roomID userName:userName block:^(NSError *error) {
+                    [wkSelf joinRoomWithRoomID:roomID display:display appId:appId token:token block:^(NSError *error) {
                         block(error);
                     }];
                 }else{
@@ -129,7 +129,7 @@ static NSString * const kARDVideoTrackKind = @"video";
     
     [self.localCamera startProduce];
     WK_SELF;
-    [super joinRoomWithRoomID:roomID userName:userName block:^(NSError* error){
+    [super joinRoomWithRoomID:roomID display:display appId:appId token:token block:^(NSError *error) {
         if (error == nil) {
             [wkSelf sendOffer];
         }
@@ -181,10 +181,10 @@ static NSString * const kARDVideoTrackKind = @"video";
         if (msg[@"publishers"] != nil) {
             NSArray* list = msg[@"publishers"];
             for (NSDictionary* item in list) {
-                GJJanusListenRole* listener = [GJJanusListenRole roleWithDic:item janus:self.janus delegate:self.delegate];
-                listener.privateID = self.privateID;
-                listener.opaqueId = self.opaqueId;
-                [self.delegate GJJanusRole:self didJoinRemoteRole:listener];
+                GJJanusSubscriberRole *subscriber = [GJJanusSubscriberRole roleWithDic:item janus:self.janus delegate:self.delegate];
+                subscriber.privateID = self.privateID;
+                subscriber.opaqueId = self.opaqueId;
+                [self.delegate GJJanusRole:self didJoinRemoteRole:subscriber];
             }
         }else if(msg[@"leaving"] != nil){
             id leave = msg[@"leaving"];

@@ -1,0 +1,38 @@
+{
+  "name": "ZipArchive",
+  "version": "0.1.1",
+  "license": {
+    "type": "MIT",
+    "file": "LICENSE"
+  },
+  "summary": "An open source iOS framework for GPU-based image and video processing.",
+  "homepage": "https://github.com/MuZiLee/ZipArchive",
+  "authors": {
+    "MuZiLee": "admin@sanshengit.com"
+  },
+  "source": {
+    "git": "https://github.com/MuZiLee/ZipArchive.git",
+    "tag": "0.1.1"
+  },
+  "platforms": {
+    "ios": "8.0"
+  },
+  "source_files": "ZipArchive.{h,m}",
+  "xcconfig": {
+    "CLANG_MODULES_AUTOLINK": "YES",
+    "OTHER_LDFLAGS": "-ObjC",
+    "ENABLE_BITCODE": "NO"
+  },
+  "requires_arc": false,
+  "static_framework": true,
+  "frameworks": [
+    "UIKit"
+  ],
+  "subspecs": [
+    {
+      "name": "minizip",
+      "source_files": "minizip/*",
+      "requires_arc": false
+    }
+  ]
+}

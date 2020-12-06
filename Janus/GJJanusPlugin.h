@@ -19,12 +19,12 @@ typedef void(^AttchResult)(NSError* error);
 typedef void(^DetachedResult)(void);
 
 @interface GJJanusPlugin : NSObject<GJJanusPluginHandleProtocol>
-@property(nonatomic,copy)NSString* opaqueId;
-@property(nonatomic,copy)NSString* pluginName;
-@property(nonatomic,retain)NSNumber* handleId;
+@property(nonatomic,copy)NSString *opaqueId;
+@property(nonatomic,copy)NSString *pluginName;
+@property(nonatomic,retain)NSNumber *handleId;
 @property(nonatomic,weak)id<GJJanusPluginDelegate> delegate;
-@property(nonatomic,strong,readonly)GJJanus* janus;
-@property(nonatomic,retain)NSMutableDictionary* transactions;
+@property(nonatomic,strong,readonly)GJJanus *janus;
+@property(nonatomic,retain)NSMutableDictionary *transactions;
 @property(nonatomic,assign)BOOL attached;
 
 

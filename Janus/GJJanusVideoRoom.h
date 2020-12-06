@@ -16,19 +16,25 @@
 
 @protocol GJJanusVideoRoomDelegate<NSObject>
 
--(void)GJJanusVideoRoom:(GJJanusVideoRoom*)plugin didJoinRoomWithID:(NSUInteger)clientID;
--(void)GJJanusVideoRoomDidLeaveRoom:(GJJanusVideoRoom*)plugin;
--(void)GJJanusVideoRoom:(GJJanusVideoRoom*)plugin newRemoteJoinWithID:(NSUInteger)clientID;
--(void)GJJanusVideoRoom:(GJJanusVideoRoom*)plugin remoteLeaveWithID:(NSUInteger)clientID;
+-(void)GJJanusVideoRoom:(GJJanusVideoRoom*_Nullable)plugin
+      didJoinRoomWithID:(NSString*_Nullable)clientID;
+-(void)GJJanusVideoRoomDidLeaveRoom:(GJJanusVideoRoom*_Nullable)plugin;
+-(void)GJJanusVideoRoom:(GJJanusVideoRoom*_Nullable)plugin newRemoteJoinWithID:(NSString*_Nullable)clientID;
+-(void)GJJanusVideoRoom:(GJJanusVideoRoom*_Nullable)plugin
+      remoteLeaveWithID:(NSString*_Nullable)clientID;
 
--(void)GJJanusVideoRoom:(GJJanusVideoRoom*)plugin firstFrameDecodeWithSize:(CGSize)size uid:(NSUInteger)uid;
--(void)GJJanusVideoRoom:(GJJanusVideoRoom*)plugin renderSizeChangeWithSize:(CGSize)size uid:(NSUInteger)uid;
+-(void)GJJanusVideoRoom:(GJJanusVideoRoom*_Nullable)plugin
+firstFrameDecodeWithSize:(CGSize)size uid:(NSString*_Nullable)uid;
+-(void)GJJanusVideoRoom:(GJJanusVideoRoom*_Nullable)plugin
+renderSizeChangeWithSize:(CGSize)size uid:(NSString*_Nullable)uid;
 
--(void)GJJanusVideoRoom:(GJJanusVideoRoom*)plugin fatalErrorWithID:(KKRTCErrorCode)errorCode;
--(void)GJJanusVideoRoom:(GJJanusVideoRoom*)plugin netBrokenWithID:(KKRTCNetBrokenReason)reason;
+-(void)GJJanusVideoRoom:(GJJanusVideoRoom*_Nullable)plugin
+       fatalErrorWithID:(KKRTCErrorCode)errorCode;
+-(void)GJJanusVideoRoom:(GJJanusVideoRoom*_Nullable)plugin
+        netBrokenWithID:(KKRTCNetBrokenReason)reason;
 
 @end
-typedef void(^CompleteCallback)(BOOL isSuccess, NSError* error);
+typedef void(^CompleteCallback)(BOOL isSuccess, NSError*_Nullable error);
 
 
 
@@ -36,8 +42,8 @@ typedef void(^CompleteCallback)(BOOL isSuccess, NSError* error);
 @interface GJJanusView: UIView
 @end;
 @interface GJJanusVideoRoom : NSObject
-@property(nonatomic,weak)id<GJJanusVideoRoomDelegate> delegate;
-@property(nonatomic,strong)GJJanusPushlishMediaConstraints* localConfig;
+@property(nonatomic,weak)id<GJJanusVideoRoomDelegate> _Nullable delegate;
+@property(nonatomic,strong)GJJanusPushlishMediaConstraints*_Nullable localConfig;
 
 
 @property (nonatomic,assign         ) BOOL                   videoMute;
@@ -108,11 +114,15 @@ typedef void(^CompleteCallback)(BOOL isSuccess, NSError* error);
 
 
 //-(instancetype)initWithServer:(NSURL *)server delegate:(id<GJJanusVideoRoomDelegate>)delegate;
-+(instancetype)shareInstanceWithServer:(NSURL*)server delegate:(id<GJJanusVideoRoomDelegate>)delegate;
--(void)joinRoomWithRoomID:(NSInteger)roomID userName:(NSString*)userName completeCallback:(CompleteCallback)callback;
++(instancetype _Nullable )shareInstanceWithServer:(NSURL*_Nullable)server delegate:(id<GJJanusVideoRoomDelegate>_Nullable)delegate;
+-(void)joinRoomWithRoomID:(NSString *_Nullable)roomID
+                  display:(NSString *_Nullable)display
+                    appId:(NSString *_Nullable)appId
+                    token:(NSString *_Nullable)token
+         completeCallback:(CompleteCallback _Nullable )callback;
 -(void)leaveRoom:(void(^_Nullable )(void))leaveBlock;
--(BOOL)startPrewViewWithCanvas:(KKRTCCanvas*)canvas;
--(KKRTCCanvas*)stopPrewViewWithUid:(NSUInteger)uid;
+-(BOOL)startPrewViewWithCanvas:(KKRTCCanvas*_Nullable)canvas;
+-(KKRTCCanvas*_Nullable)stopPrewViewWithUid:(NSString *_Nullable)uid;
 
 /**
  贴图，如果存在则取消已存在的
@@ -131,7 +141,7 @@ typedef void(^CompleteCallback)(BOOL isSuccess, NSError* error);
 
 
 #pragma mark 虹软视图效果
--(BOOL)prepareVideoEffectWithBaseData:(NSString *)baseDataPath;
+-(BOOL)prepareVideoEffectWithBaseData:(NSString *_Nullable)baseDataPath;
 -(void)chanceVideoEffect;
 /**
  配置虹软贴图
@@ -139,5 +149,5 @@ typedef void(^CompleteCallback)(BOOL isSuccess, NSError* error);
  @param path 模板路径，如果为nil则表示去除贴图
  @return return value description
  */
--(BOOL)updateFaceStickerWithTemplatePath:(NSString*)path;
+-(BOOL)updateFaceStickerWithTemplatePath:(NSString*_Nullable)path;
 @end

@@ -9,5 +9,8 @@
 #import <UIKit/UIKit.h>
 
 @interface VideoCallViewController : UIViewController
-@property(nonatomic,copy)NSString* userName;
+
+@property(nonatomic,copy)NSString *userName;
+@property(nonatomic,copy)NSString *roomID;
+
 @end

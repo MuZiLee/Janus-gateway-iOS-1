@@ -1,0 +1,48 @@
+{
+  "name": "GJImage",
+  "version": "0.1.7",
+  "license": {
+    "type": "MIT",
+    "file": "LICENSE"
+  },
+  "summary": "An open source iOS framework for GPU-based image and video processing.",
+  "homepage": "https://github.com/MuZiLee/GJImage",
+  "authors": {
+    "MuZiLee": "admin@sanshengit.com"
+  },
+  "source": {
+    "git": "https://github.com/MuZiLee/GJImage.git",
+    "tag": "0.1.7"
+  },
+  "platforms": {
+    "ios": "8.0"
+  },
+  "xcconfig": {
+    "CLANG_MODULES_AUTOLINK": "YES",
+    "OTHER_LDFLAGS": "-ObjC",
+    "ENABLE_BITCODE": "NO"
+  },
+  "requires_arc": true,
+  "static_framework": true,
+  "frameworks": [
+    "UIKit",
+    "OpenGLES",
+    "CoreMedia",
+    "CoreVideo",
+    "QuartzCore",
+    "AVFoundation"
+  ],
+  "subspecs": [
+    {
+      "name": "GPUImage",
+      "source_files": "GJImage/GPUImage/**/*.{h,m}",
+      "public_header_files": "GJImage/GPUImage/**/*.h"
+    },
+    {
+      "name": "GJImage",
+      "source_files": "GJImage/GJImageFilters/**/*.{h,m}",
+      "public_header_files": "GPUImage/GJImageFilters/**/*.h",
+      "vendored_libraries": "GJImage/GJImageFilters/ARCSoft/lib/libarcsoft_spotlight.a"
+    }
+  ]
+}

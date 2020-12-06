@@ -1,0 +1,1 @@
+../../../GJImage/GJImage/GJImageFilters/GJPaintingCamera.h

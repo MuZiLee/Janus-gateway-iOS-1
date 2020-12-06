@@ -73,6 +73,6 @@ typedef NS_ENUM(NSUInteger, KKRTCRenderMode) {
 @interface KKRTCCanvas : NSObject
 @property (strong, nonatomic) UIView* view;
 @property (assign, nonatomic) KKRTCRenderMode renderMode; // the render mode of view: hidden, fit and adaptive
-@property (assign, nonatomic) NSUInteger uid; // the user id of view
-+ (instancetype)canvasWithUid:(NSUInteger)uid view:(UIView*)view renderMode:(KKRTCRenderMode)mode;
+@property (copy, nonatomic) NSString *uid; // the user id of view
++ (instancetype)canvasWithUid:(NSString*)uid view:(UIView*)view renderMode:(KKRTCRenderMode)mode;
 @end

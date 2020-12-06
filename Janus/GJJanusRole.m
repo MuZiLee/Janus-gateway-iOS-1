@@ -7,7 +7,7 @@
 //
 
 #import "GJJanusRole.h"
-#import "GJJanusListenRole.h"
+#import "GJJanusSubscriberRole.h"
 #import "RTCFactory.h"
 //#define GOOGLE_ICE @"stun:stun.l.google.com:19302"
 @interface GJJanusRole()
@@ -18,15 +18,15 @@
 @implementation GJJanusRole
 @dynamic delegate;
 
-+(instancetype)roleWithDic:(NSDictionary*)dic janus:(GJJanus*)janus delegate:(id<GJJanusRoleDelegate>)delegate{
++ (instancetype)roleWithDic:(NSDictionary*)dic janus:(GJJanus*)janus delegate:(id<GJJanusRoleDelegate>)delegate{
     GJJanusRole* publish = [[GJJanusRole alloc]initWithJanus:janus delegate:delegate];
-    publish.ID = [dic[@"id"] integerValue];
+    publish.ID      = dic[@"id"];
     publish.display = dic[@"display"];
     publish.audioCode = dic[@"audio_codec"];
     publish.videoCode = dic[@"video_codec"];
     return publish;
 }
--(instancetype)initWithJanus:(GJJanus*)janus delegate:(id<GJJanusRoleDelegate>)delegate{
+- (instancetype)initWithJanus:(GJJanus*)janus delegate:(id<GJJanusRoleDelegate>)delegate{
     self = [super initWithJanus:janus delegate:delegate];
     if (self) {
         self.opaqueId = [NSString stringWithFormat:@"videoroomtest-%@",randomString(12)];
@@ -35,7 +35,7 @@
     }
     return self;
 }
--(void)setStatus:(GJJanusRoleStatus)status{
+- (void)setStatus:(GJJanusRoleStatus)status{
     _status = status;
 }
 - (BOOL)attachWithCallback:(AttchResult)resultCallback{
@@ -53,7 +53,7 @@
     }];
 }
 
--(RTCPeerConnection *)peerConnection{
+- (RTCPeerConnection *)peerConnection{
     if (_peerConnection == nil) {
         RTCConfiguration *configuration = [[RTCConfiguration alloc] init];
         NSMutableDictionary* optionalDic = [NSMutableDictionary dictionaryWithCapacity:1];
@@ -73,7 +73,7 @@
     return _peerConnection;
 }
 
--(void)detachWithCallback:(DetachedResult)result{
+- (void)detachWithCallback:(DetachedResult)result{
     if(self.status <= kJanusRoleStatusDetaching)return;
     self.status = kJanusRoleStatusDetaching;
     WK_SELF;
@@ -84,18 +84,40 @@
 
 }
 
--(void)joinRoomWithRoomID:(NSInteger)roomID userName:(NSString *)userName block:(RoleJoinRoomCallback)block{
+- (void)joinRoomWithRoomID:(NSString *)roomID
+                   display:(NSString *)display
+                     appId:(NSString *)appId
+                     token:(NSString *)token
+                     block:(RoleJoinRoomCallback)block {
     self.roomID = roomID;
+    self.display = display;
+    self.appID = appId;
+    self.token = token;
     NSDictionary* msg;
     WK_SELF;
     if (self.pType == kPublishTypePublish) {
-        if (userName == nil) {
-            msg = @{ @"request": @"join", @"room": @(roomID), @"ptype": @"publisher"};
+        if (display == nil) {
+            msg = @{ @"request": @"join",
+                     @"room": roomID,
+                     @"appId": appId,
+                     @"token": token,
+                     @"ptype": @"publisher"};
         }else{
-            msg = @{ @"request": @"join", @"room": @(roomID), @"ptype": @"publisher",@"display":userName};
+            msg = @{ @"request": @"join",
+                     @"room": roomID,
+                     @"appId": appId,
+                     @"token": token,
+                     @"ptype": @"publisher",
+                     @"display":display};
         }
     }else{
-        msg = @{ @"request": @"join", @"room": @(roomID), @"ptype": @"listener",@"feed": @(self.ID),@"private_id": self.privateID};
+        msg = @{ @"request": @"join",
+                 @"room": roomID,
+                 @"appId": appId,
+                 @"token": token,
+                 @"ptype": @"subscriber",
+                 @"feed": self.ID,
+                 @"private_id": self.privateID};
     }
 
     self.status = kJanusRoleStatusJoining;
@@ -108,18 +130,18 @@
             NSString* event = msg[@"videoroom"];
 
             NSAssert(([event isEqualToString:@"joined"] && wkSelf.pType == kPublishTypePublish) ||
-                     ([event isEqualToString:@"attached"] && wkSelf.pType == kPublishTypeLister), @"接收的json 格式有误");
+                     ([event isEqualToString:@"attached"] && wkSelf.pType == kPublishTypeSubscriber), @"接收的json 格式有误");
             wkSelf.status = kJanusRoleStatusJoined;
-            wkSelf.ID = [msg[@"id"] integerValue];
+            wkSelf.ID = msg[@"id"];
             wkSelf.privateID = msg[@"private_id"];
             block(nil);
             if (msg[@"publishers"] != nil) {
                 NSArray* list = msg[@"publishers"];
                 for (NSDictionary* item in list) {
-                    GJJanusListenRole* listener = [GJJanusListenRole roleWithDic:item janus:wkSelf.janus delegate:self.delegate];
-                    listener.privateID = wkSelf.privateID;
-                    listener.opaqueId = wkSelf.opaqueId;
-                    [wkSelf.delegate GJJanusRole:wkSelf didJoinRemoteRole:listener];
+                    GJJanusSubscriberRole *subscriber = [GJJanusSubscriberRole roleWithDic:item janus:wkSelf.janus delegate:self.delegate];
+                    subscriber.privateID = wkSelf.privateID;
+                    subscriber.opaqueId = wkSelf.opaqueId;
+                    [wkSelf.delegate GJJanusRole:wkSelf didJoinRemoteRole:subscriber];
                 }
             }
             if (jsep) {
@@ -129,7 +151,7 @@
      
     }];
 }
--(void)leaveRoom:(RoleLeaveRoomCallback)leaveBlock{
+- (void)leaveRoom:(RoleLeaveRoomCallback)leaveBlock{
     NSDictionary* msg = @{ @"request": @"leave"};
     WK_SELF;
     if (self.status > kJanusRoleStatusJoining) {
@@ -148,23 +170,27 @@
     }
 }
 
--(void)destoryRTCPeer{
+- (void)destoryRTCPeer{
     if (_peerConnection) {
         [_peerConnection close];
         _peerConnection = nil;
     }
 }
 
--(void)dealloc{
+- (void)dealloc{
     [self destoryRTCPeer];
 }
 
--(void)newRemoteFeed:(GJJanusListenRole*)listener{
+- (void)newRemoteFeed:(GJJanusSubscriberRole*)subscriber{
     assert(0);
-    [self.delegate GJJanusRole:self didJoinRemoteRole:listener];
+    [self.delegate GJJanusRole:self didJoinRemoteRole:subscriber];
 }
 
--(void)handleRemoteJesp:(NSDictionary *)jsep{
+- (void)handleRemoteJesp:(NSDictionary *)jsep{
+    assert(0);
+}
+
+- (void)prepareLocalJesp:(NSDictionary *)jsep {
     assert(0);
 }
 
@@ -174,19 +200,21 @@
     
 }
 
--(void)pluginDTLSHangupWithReson:(NSString *)reason{
+- (void)pluginDTLSHangupWithReson:(NSString *)reason{
     if (self.status == kJanusRoleStatusJoined) {
         assert(0);
         WK_SELF;
         [self leaveRoom:^{
-            [wkSelf joinRoomWithRoomID:wkSelf.roomID userName:wkSelf.display block:^(NSError *error) {
+            // joinRoomWithRoomID:wkSelf.roomID userName:wkSelf.display block:^(NSError *error
+         
+            [wkSelf joinRoomWithRoomID:wkSelf.roomID display:wkSelf.display appId:self.appID token:self.token block:^(NSError *error) {
                 assert(0);
             }];
         }];
     }
 }
 
--(void)pluginDetached{
+- (void)pluginDetached{
     [super pluginDetached];
     self.status = kJanusRoleStatusDetached;
 }

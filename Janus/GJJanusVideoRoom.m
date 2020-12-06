@@ -7,7 +7,7 @@
 
 #import "GJJanusVideoRoom.h"
 #import "Tools.h"
-#import "GJJanusListenRole.h"
+#import "GJJanusSubscriberRole.h"
 #import "GJJanusPublishRole.h"
 #import <WebRTC/RTCSessionDescription.h>
 #import <WebRTC/WebRTC.h>
@@ -39,10 +39,12 @@ static NSString* vidoeRoomMessage[] = {
 
 
 
-@interface GJJanusVideoRoom()<GJJanusDelegate,GJJanusRoleDelegate,GJJanusListenRoleDelegate>
+@interface GJJanusVideoRoom()<GJJanusDelegate,GJJanusRoleDelegate,GJJanusSubscriberRoleDelegate>
 {
-    NSInteger _userID;
-    NSString* _userName;
+    NSString* _userID;
+    NSString* _display;
+    NSString* _appId;
+    NSString* _token;
 
     NSString* _myID;
     NSString* _myPvtId;
@@ -52,11 +54,11 @@ static NSString* vidoeRoomMessage[] = {
     NSRecursiveLock*    _lock;//
     
 }
-@property(nonatomic,strong)NSMutableDictionary<NSNumber*,GJJanusListenRole*>* remotes;
+@property(nonatomic,strong)NSMutableDictionary<NSString *,GJJanusSubscriberRole*>* remotes;
 @property(nonatomic,strong,readonly)GJJanus* janus;
-@property(nonatomic,assign)NSInteger roomID;
+@property(nonatomic,assign)NSString* roomID;
 @property(nonatomic,retain)GJJanusPublishRole* publlisher;
-@property(nonatomic,retain)NSMutableDictionary<NSNumber*,KKRTCCanvas*>* canvas;
+@property(nonatomic,retain)NSMutableDictionary<NSString *, KKRTCCanvas*>* canvas;
 
 @end
 
@@ -122,18 +124,18 @@ static GJJanusVideoRoom* _shareJanusInstance;
     }
 }
 
--(void)joinRoomWithRoomID:(NSInteger)roomID userName:(NSString*)userName completeCallback:(CompleteCallback)callback{
+-(void)joinRoomWithRoomID:(NSString *)roomID display:(NSString *)display appId:(NSString *)appId token:(NSString *)token completeCallback:(CompleteCallback)callback{
     AUTO_LOCK(_lock)
     _roomID = roomID;
-    _userName = userName;
+    _display = display;
     
     WK_SELF;
-    [_publlisher joinRoomWithRoomID:roomID userName:userName block:^(NSError *error) {
+    [_publlisher joinRoomWithRoomID:roomID display:display appId:appId token:token block:^(NSError *error) {
         if (callback) {
             callback(error == nil,error);
         }else{
             dispatch_async(dispatch_get_main_queue(), ^{
-                [wkSelf.delegate GJJanusVideoRoom:wkSelf didJoinRoomWithID:wkSelf.publlisher.ID];
+                [wkSelf.delegate GJJanusVideoRoom:wkSelf didJoinRoomWithID:wkSelf.publlisher.roomID];
 
             });
         }
@@ -143,8 +145,8 @@ static GJJanusVideoRoom* _shareJanusInstance;
 -(void)leaveRoom:(void(^_Nullable )(void))leaveBlock{
     AUTO_LOCK(_lock)
     WK_SELF;
-    for (GJJanusListenRole* listenRole  in _remotes.allValues) {
-        [listenRole leaveRoom:nil];
+    for (GJJanusSubscriberRole *subscriberRole  in _remotes.allValues) {
+        [subscriberRole leaveRoom:nil];
     }
     [_remotes removeAllObjects];
     [_publlisher leaveRoom:^{
@@ -191,7 +193,7 @@ static GJJanusVideoRoom* _shareJanusInstance;
 -(BOOL)startPrewViewWithCanvas:(KKRTCCanvas*)canvas{
     AUTO_LOCK(_lock)
     NSAssert(canvas != nil && canvas.view != nil, @"param error");
-    if (canvas.uid == 0 || canvas.uid == _publlisher.ID) {
+    if ([canvas.uid isEqualToString:_publlisher.ID]) {
         [_publlisher startPreview];
         _publlisher.renderView.frame = canvas.view.bounds;
         _publlisher.renderView.frame = canvas.view.bounds;
@@ -210,7 +212,7 @@ static GJJanusVideoRoom* _shareJanusInstance;
         [canvas.view addSubview:self.publlisher.renderView];
     }else{
         runAsyncInMainDispatch(^{
-            GJJanusListenRole* role = _remotes[@(canvas.uid)];
+            GJJanusSubscriberRole* role = _remotes[canvas.uid];
             [role.renderView removeFromSuperview];
             role.renderView.frame = canvas.view.bounds;
             [canvas.view addObserver:self forKeyPath:@"frame" options:NSKeyValueObservingOptionNew context:(__bridge void * _Nullable)(canvas)];
@@ -218,42 +220,41 @@ static GJJanusVideoRoom* _shareJanusInstance;
             canvas.renderView = role.renderView;
         });
     }
-    _canvas[@(canvas.uid)] = canvas;
+    _canvas[canvas.uid] = canvas;
     return YES;
 }
 
--(KKRTCCanvas*)stopPrewViewWithUid:(NSUInteger)uid{
+-(KKRTCCanvas*)stopPrewViewWithUid:(NSString *)uid{
     AUTO_LOCK(_lock)
 //    NSLog(@"%lu",(unsigned long)uid);
-    KKRTCCanvas* canvas = _canvas[@(uid)];
-    if (uid == 0 || uid == _publlisher.ID) {
+    KKRTCCanvas* canvas = _canvas[uid];
+    if (uid == nil || [uid isEqualToString:_publlisher.ID]) {
         [_publlisher stopPreview];
     }else{
-        GJJanusListenRole* role = _remotes[@(canvas.uid)];
+        GJJanusSubscriberRole* role = _remotes[canvas.uid];
         [canvas.view removeObserver:self forKeyPath:@"frame"];
         role.renderView = nil;
-        [_canvas removeObjectForKey:@(uid)];
+        [_canvas removeObjectForKey:uid];
     }
     return canvas;
 }
 
-- (void)startListenRemote:(GJJanusListenRole*)remoteRole{
+- (void)startSubscriberRoleRemote:(GJJanusSubscriberRole*)remoteRole{
     AUTO_LOCK(_lock)
     NSLog(@"%s", remoteRole.description.UTF8String);
-    _remotes[@(remoteRole.ID)] = remoteRole;
+    _remotes[remoteRole.ID] = remoteRole;
     WK_SELF;
-    [remoteRole joinRoomWithRoomID:wkSelf.roomID userName:nil block:^(NSError *error) {
-        
+    [remoteRole joinRoomWithRoomID:wkSelf.roomID display:remoteRole.display appId:remoteRole.appID token:remoteRole.token block:^(NSError *error) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [wkSelf.delegate GJJanusVideoRoom:wkSelf newRemoteJoinWithID:remoteRole.ID];
         });
     }];
 }
 
--(void)stopListernRemote:(GJJanusListenRole*)remoteRole{
+-(void)stopSubscriberRemote:(GJJanusSubscriberRole*)remoteRole{
     AUTO_LOCK(_lock)
     NSLog(@"%s", remoteRole.description.UTF8String);
-    [_remotes removeObjectForKey:@(remoteRole.ID)];
+    [_remotes removeObjectForKey:remoteRole.ID];
 }
 
 
@@ -331,7 +332,7 @@ static GJJanusVideoRoom* _shareJanusInstance;
 -(void)GJJanusRole:(GJJanusRole *)role joinRoomWithResult:(NSError *)error{
     AUTO_LOCK(_lock)
     NSAssert(error == nil, error.description);
-    if (role.ID == _publlisher.ID) {
+    if ([role.ID isEqualToString:_publlisher.ID]) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.delegate GJJanusVideoRoom:self didJoinRoomWithID:role.ID];
         });
@@ -343,31 +344,31 @@ static GJJanusVideoRoom* _shareJanusInstance;
 -(void)GJJanusRole:(GJJanusRole*)role leaveRoomWithResult:(NSError*)error{
     AUTO_LOCK(_lock)
     NSAssert(error == nil, error.description);
-    if (role.ID == _publlisher.ID) {
+    if ([role.ID isEqualToString:_publlisher.ID]) {
         [self.janus destorySession];
     }
 }
 
-- (void)GJJanusRole:(GJJanusRole *)role didJoinRemoteRole:(GJJanusListenRole *)remoteRole {
+- (void)GJJanusRole:(GJJanusRole *)role didJoinRemoteRole:(GJJanusSubscriberRole *)remoteRole {
     AUTO_LOCK(_lock)
     NSLog(@"%s", remoteRole.description.UTF8String);
     for (GJJanusRole* remote in _remotes.allValues) {
-        if (remote.ID == remoteRole.ID) {
+        if ([remote.ID isEqualToString:remoteRole.ID]) {
             return;
         }
     }
-    [self startListenRemote:remoteRole];
+    [self startSubscriberRoleRemote:remoteRole];
 }
--(void)GJJanusRole:(GJJanusRole *)role remoteUnPublishedWithUid:(NSUInteger)uid{
+-(void)GJJanusRole:(GJJanusRole *)role remoteUnPublishedWithUid:(NSString *)uid{
     
 }
 
-- (void)GJJanusRole:(GJJanusRole *)role didLeaveRemoteRoleWithUid:(NSUInteger)uid{
+- (void)GJJanusRole:(GJJanusRole *)role didLeaveRemoteRoleWithUid:(NSString *)uid{
     AUTO_LOCK(_lock)
     NSLog(@"%lu",(unsigned long)uid);
-    GJJanusListenRole* leaveRole = _remotes[@(uid)];
+    GJJanusSubscriberRole* leaveRole = _remotes[uid];
     if (leaveRole) {
-        [_remotes removeObjectForKey:@(uid)];
+        [_remotes removeObjectForKey:uid];
         [leaveRole detachWithCallback:nil];
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.delegate GJJanusVideoRoom:self remoteLeaveWithID:uid];
@@ -375,12 +376,12 @@ static GJJanusVideoRoom* _shareJanusInstance;
     }
 }
 
--(void)GJJanusRole:(GJJanusRole *)role remoteDetachWithUid:(NSUInteger)uid{
+-(void)GJJanusRole:(GJJanusRole *)role remoteDetachWithUid:(NSString *)uid{
     AUTO_LOCK(_lock)
     NSLog(@"%lu",(unsigned long)uid);
-    GJJanusListenRole* leaveRole = _remotes[@(uid)];
+    GJJanusSubscriberRole* leaveRole = _remotes[uid];
     if (leaveRole) {
-        [_remotes removeObjectForKey:@(uid)];
+        [_remotes removeObjectForKey:uid];
         [role detachWithCallback:nil];
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.delegate GJJanusVideoRoom:self remoteLeaveWithID:uid];
@@ -388,7 +389,7 @@ static GJJanusVideoRoom* _shareJanusInstance;
     }
 }
 
--(void)janusListenRole:(GJJanusListenRole *)role firstRenderWithSize:(CGSize)size{
+-(void)janusSubscriberRole:(GJJanusSubscriberRole *)role firstRenderWithSize:(CGSize)size{
     runAsyncInMainDispatch(^{
         if ([self.delegate respondsToSelector:@selector(GJJanusVideoRoom:firstFrameDecodeWithSize:uid:)]) {
             [self.delegate GJJanusVideoRoom:self firstFrameDecodeWithSize:size uid:role.ID];
@@ -396,7 +397,7 @@ static GJJanusVideoRoom* _shareJanusInstance;
     });
 }
 
--(void)janusListenRole:(GJJanusListenRole *)role renderSizeChangeWithSize:(CGSize)size{
+-(void)janusSubscriberRole:(GJJanusSubscriberRole *)role renderSizeChangeWithSize:(CGSize)size{
     runAsyncInMainDispatch(^{
         if ([self.delegate respondsToSelector:@selector(GJJanusVideoRoom:renderSizeChangeWithSize:uid:)]) {
             [self.delegate GJJanusVideoRoom:self renderSizeChangeWithSize:size uid:role.ID];
@@ -410,6 +411,11 @@ static GJJanusVideoRoom* _shareJanusInstance;
         [self.delegate GJJanusVideoRoom:self netBrokenWithID:reason];
     });
 }
+
+- (void)janus:(GJJanus *)janus attachPlugin:(NSNumber *)handleID result:(NSError *)error {
+    NSLog(@"%s",__FUNCTION__);
+}
+
 
 -(void)updateRenderViewFrame:(KKRTCCanvas*)canvas{
     canvas.renderView.frame = canvas.view.bounds;

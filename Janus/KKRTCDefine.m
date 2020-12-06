@@ -10,7 +10,7 @@
 #import "KKRTCDefine+private.h"
 
 @implementation KKRTCCanvas
-+ (instancetype)canvasWithUid:(NSUInteger)uid view:(UIView*)view renderMode:(KKRTCRenderMode)mode
++ (instancetype)canvasWithUid:(NSString *)uid view:(UIView*)view renderMode:(KKRTCRenderMode)mode
 {
     KKRTCCanvas* canvas = [[KKRTCCanvas alloc]init];
     canvas.uid = uid;

@@ -1,0 +1,1 @@
+../../../GJImage/GJImage/GJImageFilters/ARCSoft/include/arcsoft/arcsoft_spotlight_common.h

@@ -8,13 +8,13 @@
 
 #import "VideoCallViewController.h"
 #import "GJJanusVideoRoom.h"
-#import "ZipArchive.h"
+
 
 //#define ROOM_ID 19911024
-#define ROOM_ID 1234
+
 
 //#error 请自行搭建janus服务器。https://janus.conf.meetecho.com/index.html
-#define SERVER_ADDR @"ws://192.168.0.145:8188"
+#define SERVER_ADDR @"wss://janus.conf.meetecho.com/ws"
 
 @interface GJSliderView:UISlider{
     UILabel * _titleLab;
@@ -160,7 +160,7 @@
     UIButton* _startStickerBtn;
     UIButton* _sizeChange;
     NSMutableArray<UIView*>* _controlBtns;
-    NSArray<NSString*>* _stickerPath;
+    
     NSDictionary* _pushSize;
     UIButton* _faceStickerBtn;
     UIButton* _videoOrientationBtn;
@@ -176,7 +176,7 @@
 @property(retain,nonatomic)GJJanusVideoRoom* videoRoom;
 @property(retain,nonatomic)UIButton* exitBtn;
 @property(retain,nonatomic)UIView* localView;
-@property(retain,nonatomic)NSMutableDictionary<NSNumber*,KKRTCCanvas*>* remotes;
+@property(retain,nonatomic)NSMutableDictionary<NSString *,KKRTCCanvas*>* remotes;
 @end
 
 @implementation VideoCallViewController
@@ -196,7 +196,7 @@
                   @"720*960":[NSValue valueWithCGSize:CGSizeMake(720, 960)],
                   @"640*480":[NSValue valueWithCGSize:CGSizeMake(640, 480)],
                   };
-    _stickerPath = @[@"bear",@"bd",@"hkbs",@"lb",@"null"];
+    
 
     GJJanusPushlishMediaConstraints* localConfig = [[GJJanusPushlishMediaConstraints alloc]init];
     localConfig.pushSize = [_pushSize.allValues[_sizeChange.tag % _pushSize.count] CGSizeValue];
@@ -375,11 +375,17 @@
 //            //    localConfig.audioEnable = NO;
 //            _videoRoom.localConfig = localConfig;
             
-            [_videoRoom joinRoomWithRoomID:ROOM_ID userName:_userName completeCallback:^(BOOL isSuccess, NSError *error) {
-                if(isSuccess == NO)btn.selected = NO;
+            //获取token
+            NSString *token = @"";
+            NSString *appId = @"";
+            NSString *display = @"";
+            [_videoRoom joinRoomWithRoomID:self.roomID display:display appId:appId token:token completeCallback:^(BOOL isSuccess, NSError *error) {
+                if(isSuccess == NO) {
+                    btn.selected = NO;
+                }
                 NSLog(@"joinRoomWithRoomID:%@", error);
             }];
-        }else{
+        } else {
             [_videoRoom leaveRoom:^{
                 
             }];
@@ -450,31 +456,31 @@
 //        }
 
     }else if (btn == _faceStickerBtn){
-        NSString* zpath = [[NSBundle mainBundle]pathForResource:_stickerPath[btn.tag%_stickerPath.count] ofType:@"zip"];
-        NSString*   unzipPath = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES)[0];
-        NSString* destPath = [unzipPath stringByAppendingPathComponent:_stickerPath[btn.tag%_stickerPath.count]];
-
-        BOOL isDir;
-        BOOL exist = [[NSFileManager defaultManager] fileExistsAtPath:destPath isDirectory:&isDir];
-
-        if (!exist || !isDir) {
-            ZipArchive* zip = [[ZipArchive alloc]init];
-            if([zip UnzipOpenFile:zpath]){
-                if (![zip UnzipFileTo:unzipPath overWrite:NO]) {
-                    printf("error\n");
-                }
-                [zip UnzipCloseFile];
-            };
-        }
-        
-        if (zpath) {
-            [_videoRoom updateFaceStickerWithTemplatePath:destPath];
-            [_faceStickerBtn setTitle:[NSString stringWithFormat:@"人脸贴图:%@",_stickerPath[btn.tag%_stickerPath.count]] forState:UIControlStateNormal];
-        }else{
-            [_videoRoom updateFaceStickerWithTemplatePath:nil];
-            [_faceStickerBtn setTitle:@"人脸贴图:无" forState:UIControlStateNormal];
-        }
-        btn.tag ++;
+//        NSString* zpath = [[NSBundle mainBundle]pathForResource:_stickerPath[btn.tag%_stickerPath.count] ofType:@"zip"];
+//        NSString*   unzipPath = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES)[0];
+//        NSString* destPath = [unzipPath stringByAppendingPathComponent:_stickerPath[btn.tag%_stickerPath.count]];
+//
+//        BOOL isDir;
+//        BOOL exist = [[NSFileManager defaultManager] fileExistsAtPath:destPath isDirectory:&isDir];
+//
+//        if (!exist || !isDir) {
+//            ZipArchive* zip = [[ZipArchive alloc]init];
+//            if([zip UnzipOpenFile:zpath]){
+//                if (![zip UnzipFileTo:unzipPath overWrite:NO]) {
+//                    printf("error\n");
+//                }
+//                [zip UnzipCloseFile];
+//            };
+//        }
+//        
+//        if (zpath) {
+//            [_videoRoom updateFaceStickerWithTemplatePath:destPath];
+//            [_faceStickerBtn setTitle:[NSString stringWithFormat:@"人脸贴图:%@",_stickerPath[btn.tag%_stickerPath.count]] forState:UIControlStateNormal];
+//        }else{
+//            [_videoRoom updateFaceStickerWithTemplatePath:nil];
+//            [_faceStickerBtn setTitle:@"人脸贴图:无" forState:UIControlStateNormal];
+//        }
+//        btn.tag ++;
     }else{
         assert(0);
     }
@@ -517,7 +523,7 @@
 }
 -(void)viewDidDisappear:(BOOL)animated{
     [super viewDidDisappear:animated];
-    [_videoRoom stopPrewViewWithUid:0];
+    [_videoRoom stopPrewViewWithUid:nil];
     [_videoRoom leaveRoom:nil];
 }
 - (void)didReceiveMemoryWarning {
@@ -525,11 +531,10 @@
     // Dispose of any resources that can be recreated.
 }
 
--(void)joinWithRoomID:(NSInteger)roomID ID:(NSString*)userName{
+-(void)joinWithRoomID:(NSInteger)roomID display:(NSString *)display appId:(NSString *)appId token:(NSString *)token{
     @synchronized (self) {
-        [_videoRoom joinRoomWithRoomID:ROOM_ID userName:userName completeCallback:^(BOOL isSuccess, NSError *error) {
-            
-            NSLog(@"error");
+        [_videoRoom joinRoomWithRoomID:self.roomID display:display appId:appId token:token completeCallback:^(BOOL isSuccess, NSError * _Nullable error) {
+            NSLog(@"%@",error.userInfo);
         }];
     }
 }
@@ -588,45 +593,45 @@
     
 }
 
-//-(void)GJJanusVideoRoom:(GJJanusVideoRoom *)plugin addVideoTrackWithUid:(NSUInteger)uid{
+//-(void)GJJanusVideoRoom:(GJJanusVideoRoom *)plugin addVideoTrackWithuid:(NSString *)uid{
 
 //}
 //
-//-(void)GJJanusVideoRoom:(GJJanusVideoRoom *)plugin delVideoTrackWithUid:(NSUInteger)uid{
+//-(void)GJJanusVideoRoom:(GJJanusVideoRoom *)plugin delVideoTrackWithuid:(NSString *)uid{
 //    KKRTCCanvas* canvas = _remotes[@(uid)];
 //    [self deleteRemoteView:canvas.view];
 //    [_remotes removeObjectForKey:@(uid)];
 //}
 
--(void)GJJanusVideoRoom:(GJJanusVideoRoom *)plugin didJoinRoomWithID:(NSUInteger )clientID{
+-(void)GJJanusVideoRoom:(GJJanusVideoRoom *)plugin didJoinRoomWithID:(NSString * _Nullable)clientID{
     
 }
--(void)GJJanusVideoRoom:(GJJanusVideoRoom *)plugin newRemoteJoinWithID:(NSUInteger )clientID{
+-(void)GJJanusVideoRoom:(GJJanusVideoRoom *)plugin newRemoteJoinWithID:(NSString * _Nullable)clientID{
     
 }
 
--(void)GJJanusVideoRoom:(GJJanusVideoRoom *)plugin remoteLeaveWithID:(NSUInteger )clientID{
+-(void)GJJanusVideoRoom:(GJJanusVideoRoom *)plugin remoteLeaveWithID:(NSString * _Nullable)clientID{
     KKRTCCanvas* canvas = [_videoRoom stopPrewViewWithUid:clientID];
     if (canvas) {
         [self deleteRemoteView:canvas.view];
-        [_remotes removeObjectForKey:@(clientID)];
+        [_remotes removeObjectForKey:self.roomID];
     }
 }
 
--(void)GJJanusVideoRoom:(GJJanusVideoRoom *)plugin firstFrameDecodeWithSize:(CGSize)size uid:(NSUInteger)clientID{
-    UIView* remoteView = [[GJVideoBoxView alloc]init];
+-(void)GJJanusVideoRoom:(GJJanusVideoRoom *)plugin firstFrameDecodeWithSize:(CGSize)size uid:(NSString*)clientID{
+    UIView* remoteView = [[GJVideoBoxView alloc] init];
     remoteView.backgroundColor = [UIColor blackColor];
     [self addRemoteView:remoteView withSize:size];
     KKRTCCanvas* remote = [KKRTCCanvas canvasWithUid:clientID view:remoteView renderMode:KKRTC_Render_Hidden];
     if ([_videoRoom startPrewViewWithCanvas:remote]) {
-        _remotes[@(clientID)] = remote;
+        _remotes[self.roomID] = remote;
     }else{
         [self deleteRemoteView:remoteView];
         assert(0);
     }
 }
 
--(void)GJJanusVideoRoom:(GJJanusVideoRoom *)plugin renderSizeChangeWithSize:(CGSize)size uid:(NSUInteger)clientID{
+-(void)GJJanusVideoRoom:(GJJanusVideoRoom *)plugin renderSizeChangeWithSize:(CGSize)size uid:(NSString *)clientID{
 
 }
 
